@@ -1,4 +1,7 @@
 <resources>
     <string name="app_name">Krishiyog Interview</string>
     <string name="trending_title">Trending</string>
+    <string name="retry">Retry</string>
+    <string name="something_wrong_msg">Something went wrong..</string>
+    <string name="something_wrong_msg2">An alien is probably blocking your signal</string>
 </resources>
