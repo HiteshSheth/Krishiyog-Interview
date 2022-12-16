@@ -32,6 +32,16 @@ class MainActivity : BaseActivity<MainActViewModel>(), View.OnClickListener {
         binding.rvTrendingMainAct.hideView()
 
         viewModel.getTrendingRepository()
+
+        binding.pullToRefresh.setOnRefreshListener {
+
+            binding.shimmerViewContainer.showView()
+            binding.noDataMainAct.hideView()
+            binding.rvTrendingMainAct.hideView()
+
+            viewModel.getTrendingRepository()
+            binding.pullToRefresh.isRefreshing = false
+        }
     }
 
     override fun onClick(p0: View?) {
