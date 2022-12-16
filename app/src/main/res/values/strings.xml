@@ -4,4 +4,5 @@
     <string name="retry">Retry</string>
     <string name="something_wrong_msg">Something went wrong..</string>
     <string name="something_wrong_msg2">An alien is probably blocking your signal</string>
+    <string name="default_internet_message">No internet available</string>
 </resources>

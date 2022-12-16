@@ -11,4 +11,7 @@
     <color name="no_data_bg">#FAFAFA</color>
     <color name="text_color">#939393</color>
     <color name="green">#3CAB55</color>
+    <color name="red">#EF6369</color>
+    <color name="yellow">#FEAE19</color>
+    <color name="blacks">#020202</color>
 </resources>
