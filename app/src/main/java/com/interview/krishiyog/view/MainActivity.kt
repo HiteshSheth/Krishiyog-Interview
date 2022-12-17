@@ -7,7 +7,9 @@ import com.interview.krishiyog.R
 import com.interview.krishiyog.base.BaseActivity
 import com.interview.krishiyog.databinding.ActivityMainBinding
 import com.interview.krishiyog.model.TrendingResponseModelItem
+import com.interview.krishiyog.model.entity.TrendingResponseModelEntity
 import com.interview.krishiyog.network.Resource
+import com.interview.krishiyog.utils.CommonUtils.showToast
 import com.interview.krishiyog.utils.hideView
 import com.interview.krishiyog.utils.showView
 import com.interview.krishiyog.view.adapter.TrendingAdapter
@@ -37,8 +39,7 @@ class MainActivity : BaseActivity<MainActViewModel>(), View.OnClickListener {
             binding.pullToRefresh.isRefreshing = false
         }
 
-        callTrendingAPI()
-
+        viewModel.getAllTrendingData()
     }
 
     override fun onClick(p0: View?) {
@@ -55,55 +56,31 @@ class MainActivity : BaseActivity<MainActViewModel>(), View.OnClickListener {
         when (response) {
 
             is Resource.Error<*> -> {
-                binding.noDataMainAct.showView()
-                binding.shimmerViewContainer.hideView()
-                binding.pullToRefresh.hideView()
+                noDataFound()
             }
             is Resource.UnAuthorisedRequest<*> -> {
-                binding.noDataMainAct.showView()
-                binding.shimmerViewContainer.hideView()
-                binding.pullToRefresh.hideView()
+                noDataFound()
             }
             is Resource.Success<*> -> {
                 var res = response.data as ArrayList<TrendingResponseModelItem>
 
-
                     if(res != null && res.size > 0){
 
-                        trendingAdapter = TrendingAdapter(res){
+                        var tempTrendId = 0
+                        var trendingDBList = ArrayList<TrendingResponseModelEntity>()
+                        for(trendingData in res){
 
-                            if(PREVIOUS_SELECTED_VALUE == -1){
-                                PREVIOUS_SELECTED_VALUE = it
+                            tempTrendId++
+                            var data = TrendingResponseModelEntity(tempTrendId, trendingData.author, trendingData.avatar, trendingData.currentPeriodStars, trendingData.description,
+                            trendingData.forks, trendingData.language, trendingData.languageColor, trendingData.name, trendingData.stars, trendingData.url, false)
 
-                            } else {
-                                if(PREVIOUS_SELECTED_VALUE == it && res[it].isItemOpen){
-                                    res[PREVIOUS_SELECTED_VALUE].isItemOpen = false
-                                    res[it].isItemOpen = false
-                                    trendingAdapter.notifyItemChanged(PREVIOUS_SELECTED_VALUE)
-                                    trendingAdapter.notifyItemChanged(it)
-                                    return@TrendingAdapter
-
-                                } else {
-                                    res[PREVIOUS_SELECTED_VALUE].isItemOpen = false
-                                    trendingAdapter.notifyItemChanged(PREVIOUS_SELECTED_VALUE)
-                                    PREVIOUS_SELECTED_VALUE = it
-                                }
-
-                            }
-
-                            res[it].isItemOpen = true
-                            trendingAdapter.notifyItemChanged(it)
+                            trendingDBList.add(data)
                         }
 
-                        binding.rvTrendingMainAct.adapter = trendingAdapter
-                        binding.noDataMainAct.hideView()
-                        binding.shimmerViewContainer.hideView()
-                        binding.pullToRefresh.showView()
+                        viewModel.addTrendingData(trendingDBList, res)
 
                     } else {
-                        binding.noDataMainAct.showView()
-                        binding.shimmerViewContainer.hideView()
-                        binding.pullToRefresh.hideView()
+                        noDataFound()
                     }
 
 
@@ -118,19 +95,123 @@ class MainActivity : BaseActivity<MainActViewModel>(), View.OnClickListener {
                 }
             }
             is Resource.NoInternetError1<*> -> {
-                binding.noDataMainAct.showView()
-                binding.shimmerViewContainer.hideView()
-                binding.pullToRefresh.hideView()
+                noDataFound()
             }
             is Resource.ValidationError<*> -> {
-                binding.noDataMainAct.showView()
-                binding.shimmerViewContainer.hideView()
-                binding.pullToRefresh.hideView()
+                noDataFound()
             }
             is Resource.ValidationCheck<*> -> {
-                binding.noDataMainAct.showView()
-                binding.shimmerViewContainer.hideView()
-                binding.pullToRefresh.hideView()
+                noDataFound()
+            }
+        }
+    }
+
+    fun noDataFound(){
+        binding.noDataMainAct.showView()
+        binding.shimmerViewContainer.hideView()
+        binding.pullToRefresh.hideView()
+    }
+
+
+    fun setAdapterData(res: ArrayList<TrendingResponseModelItem>){
+
+        trendingAdapter = TrendingAdapter(res){
+
+            if(PREVIOUS_SELECTED_VALUE == -1){
+                PREVIOUS_SELECTED_VALUE = it
+
+            } else {
+                if(PREVIOUS_SELECTED_VALUE == it && res[it].isItemOpen){
+                    res[PREVIOUS_SELECTED_VALUE].isItemOpen = false
+                    res[it].isItemOpen = false
+                    trendingAdapter.notifyItemChanged(PREVIOUS_SELECTED_VALUE)
+                    trendingAdapter.notifyItemChanged(it)
+                    return@TrendingAdapter
+
+                } else {
+                    res[PREVIOUS_SELECTED_VALUE].isItemOpen = false
+                    trendingAdapter.notifyItemChanged(PREVIOUS_SELECTED_VALUE)
+                    PREVIOUS_SELECTED_VALUE = it
+                }
+
+            }
+
+            res[it].isItemOpen = true
+            trendingAdapter.notifyItemChanged(it)
+        }
+
+        binding.rvTrendingMainAct.adapter = trendingAdapter
+        binding.noDataMainAct.hideView()
+        binding.shimmerViewContainer.hideView()
+        binding.pullToRefresh.showView()
+    }
+
+    private val trendingDBObserver = Observer<Any> { response ->
+        when (response) {
+
+            is Resource.Error<*> -> {
+                showToast(resources.getString(R.string.db_transaction_msg))
+            }
+            is Resource.UnAuthorisedRequest<*> -> {
+            }
+
+            is Resource.Success<*> -> {
+                var res = response.data as ArrayList<TrendingResponseModelItem>
+
+                setAdapterData(res)
+            }
+
+            is Resource.Loading<*> -> {
+                response.isLoadingShow.let {
+
+                }
+            }
+            is Resource.NoInternetError1<*> -> {
+
+            }
+            is Resource.ValidationError<*> -> {
+                showToast(resources.getString(R.string.db_transaction_msg))
+            }
+            is Resource.ValidationCheck<*> -> {
+                showToast(resources.getString(R.string.db_transaction_msg))
+            }
+        }
+    }
+
+    private val trendingListDBObserver = Observer<Any> { response ->
+        when (response) {
+
+            is Resource.Error<*> -> {
+                showToast(resources.getString(R.string.db_transaction_msg))
+            }
+            is Resource.UnAuthorisedRequest<*> -> {
+            }
+
+            is Resource.Success<*> -> {
+
+                var res = response.data as ArrayList<TrendingResponseModelItem>
+
+                if(res != null && res.size > 0){
+
+                    setAdapterData(res)
+                } else {
+                    callTrendingAPI()
+                }
+            }
+
+            is Resource.Loading<*> -> {
+                response.isLoadingShow.let {
+
+                }
+            }
+            is Resource.NoInternetError1<*> -> {
+
+            }
+            is Resource.ValidationError<*> -> {
+                showToast(resources.getString(R.string.db_transaction_msg))
+            }
+            is Resource.ValidationCheck<*> -> {
+                showToast(resources.getString(R.string.db_transaction_msg))
             }
         }
     }
@@ -146,10 +227,14 @@ class MainActivity : BaseActivity<MainActViewModel>(), View.OnClickListener {
 
     override fun addObserver() {
         viewModel.trendingRepoStatus.observe(this, trendingRepoObserver)
+        viewModel.trendingDBStatus.observe(this, trendingDBObserver)
+        viewModel.trendingListDBStatus.observe(this, trendingListDBObserver)
     }
 
     override fun removeObserver() {
         viewModel.trendingRepoStatus.removeObserver(trendingRepoObserver)
+        viewModel.trendingDBStatus.removeObserver(trendingDBObserver)
+        viewModel.trendingListDBStatus.removeObserver(trendingListDBObserver)
     }
 
 }
