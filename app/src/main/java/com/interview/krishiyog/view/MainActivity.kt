@@ -1,6 +1,7 @@
 package com.interview.krishiyog.view
 
 import android.os.Bundle
+import android.util.Log
 import android.view.View
 import androidx.lifecycle.Observer
 import com.interview.krishiyog.R
@@ -9,7 +10,10 @@ import com.interview.krishiyog.databinding.ActivityMainBinding
 import com.interview.krishiyog.model.TrendingResponseModelItem
 import com.interview.krishiyog.model.entity.TrendingResponseModelEntity
 import com.interview.krishiyog.network.Resource
+import com.interview.krishiyog.utils.CommonUtils.checkDateIsGreaterThan
+import com.interview.krishiyog.utils.CommonUtils.getCurrentDateTime
 import com.interview.krishiyog.utils.CommonUtils.showToast
+import com.interview.krishiyog.utils.PreferenceHelper
 import com.interview.krishiyog.utils.hideView
 import com.interview.krishiyog.utils.showView
 import com.interview.krishiyog.view.adapter.TrendingAdapter
@@ -39,7 +43,19 @@ class MainActivity : BaseActivity<MainActViewModel>(), View.OnClickListener {
             binding.pullToRefresh.isRefreshing = false
         }
 
-        viewModel.getAllTrendingData()
+        if(PreferenceHelper.getDateTime().isEmpty()){
+
+            PreferenceHelper.setDateTime(getCurrentDateTime())
+            callTrendingAPI()
+
+        } else {
+            if(checkDateIsGreaterThan(PreferenceHelper.getDateTime())){
+                callTrendingAPI()
+            } else {
+                viewModel.getAllTrendingData()
+            }
+        }
+
     }
 
     override fun onClick(p0: View?) {
